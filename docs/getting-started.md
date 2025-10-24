@@ -1,49 +1,165 @@
----
-id: environment-setup
-title: Get Started with React Native
-hide_table_of_contents: true
----
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Platform,
+  KeyboardAvoidingView,
+  ScrollView
+} from 'react-native';
 
-import PlatformSupport from '@site/src/theme/PlatformSupport';
-import BoxLink from '@site/src/theme/BoxLink';
+const App = () => {
+  const [currentPage, setCurrentPage] = useState('home');
+  const [formData, setFormData] = useState({
+    name: '',
+    lastname: '',
+    phone: '',
+    date: '',
+    time: '',
+    note: ''
+  });
 
-**React Native allows developers who know React to create native apps.** At the same time, native developers can use React Native to gain parity between native platforms by writing common features once.
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
-We believe that the best way to experience React Native is through a **Framework**, a toolbox with all the necessary APIs to let you build production ready apps.
+  const handleBooking = async () => {
+    if (!formData.name || !formData.lastname || !formData.phone || !formData.date || !formData.time) {
+      Alert.alert('خطأ', 'يرجى ملء جميع الحقول المطلوبة');
+      return;
+    }
 
-You can also use React Native without a Framework, however we’ve found that most developers benefit from using a React Native Framework like [Expo](https://expo.dev). Expo provides features like file-based routing, high-quality universal libraries, and the ability to write plugins that modify native code without having to manage native files.
+    const phoneRegex = /^[0-9+]{10,}$/;
+    if (!phoneRegex.test(formData.phone)) {
+      Alert.alert('خطأ', 'يرجى إدخال رقم هاتف صحيح');
+      return;
+    }
 
-<details>
-<summary>Can I use React Native without a Framework?</summary>
+    try {
+      const response = await fetch('https://sheet.best/api/sheets/xxxxxx-xxxx-xxxx-xxxx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
 
-Yes. You can use React Native without a Framework. **However, if you’re building a new app with React Native, we recommend using a Framework.**
+      if (response.ok) {
+        Alert.alert('نجاح', '✅ تم حجز موعدك بنجاح!');
+        setFormData({ name: '', lastname: '', phone: '', date: '', time: '', note: '' });
+        setCurrentPage('home');
+      } else {
+        throw new Error('فشل في الحجز');
+      }
+    } catch (error) {
+      Alert.alert('خطأ', 'حدث خطأ أثناء الحجز. يرجى المحاولة مرة أخرى');
+    }
+  };
 
-In short, you’ll be able to spend time writing your app instead of writing an entire Framework yourself in addition to your app.
+  const HomePage = () => (
+    <View style={styles.container}>
+      <Text style={styles.header}>📅 حجز موعد مكتب بلمبروك</Text>
+      <TouchableOpacity style={styles.button} onPress={() => setCurrentPage('booking')}>
+        <Text style={styles.buttonText}>ابدأ الحجز</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
-The React Native community has spent years refining approaches to navigation, accessing native APIs, dealing with native dependencies, and more. Most apps need these core features. A React Native Framework provides them from the start of your app.
+  const BookingPage = () => (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined} // لأندرويد غالبًا لا حاجة للـ "height"
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0} // لتجنب تغطية iOS
+    >
+      <ScrollView
+        style={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.subHeader}>معلومات الحجز</Text>
 
-Without a Framework, you’ll either have to write your own solutions to implement core features, or you’ll have to piece together a collection of pre-existing libraries to create a skeleton of a Framework. This takes real work, both when starting your app, then later when maintaining it.
+        <TextInput
+          style={styles.input}
+          placeholder="الاسم"
+          value={formData.name}
+          onChangeText={(value) => handleInputChange('name', value)}
+          autoCorrect={false}
+          autoCapitalize="words"
+        />
 
-If your app has unusual constraints that are not served well by a Framework, or you prefer to solve these problems yourself, you can make a React Native app without a Framework using Android Studio, Xcode. If you’re interested in this path, learn how to [set up your environment](set-up-your-environment) and how to [get started without a framework](getting-started-without-a-framework).
+        <TextInput
+          style={styles.input}
+          placeholder="اللقب"
+          value={formData.lastname}
+          onChangeText={(value) => handleInputChange('lastname', value)}
+          autoCorrect={false}
+          autoCapitalize="words"
+        />
 
-</details>
+        <TextInput
+          style={styles.input}
+          placeholder="رقم الهاتف"
+          value={formData.phone}
+          onChangeText={(value) => handleInputChange('phone', value)}
+          keyboardType="phone-pad"
+        />
 
-## Start a new React Native project with Expo
+        <TextInput
+          style={styles.input}
+          placeholder="التاريخ (YYYY-MM-DD)"
+          value={formData.date}
+          onChangeText={(value) => handleInputChange('date', value)}
+        />
 
-<PlatformSupport platforms={['android', 'ios', 'tv', 'web']} />
+        <TextInput
+          style={styles.input}
+          placeholder="الساعة (HH:MM)"
+          value={formData.time}
+          onChangeText={(value) => handleInputChange('time', value)}
+        />
 
-Expo is a production-grade React Native Framework. Expo provides developer tooling that makes developing apps easier, such as file-based routing, a standard library of native modules, and much more.
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          placeholder="ملاحظة (اختياري)"
+          value={formData.note}
+          onChangeText={(value) => handleInputChange('note', value)}
+          multiline
+          numberOfLines={3}
+          textAlignVertical="top"
+        />
 
-Expo's Framework is free and open source, with an active community on [GitHub](https://github.com/expo) and [Discord](https://chat.expo.dev). The Expo team works in close collaboration with the React Native team at Meta to bring the latest React Native features to the Expo SDK.
+        <TouchableOpacity style={styles.button} onPress={handleBooking}>
+          <Text style={styles.buttonText}>تأكيد الحجز</Text>
+        </TouchableOpacity>
 
-The team at Expo also provides Expo Application Services (EAS), an optional set of services that complements Expo, the Framework, in each step of the development process.
+        <TouchableOpacity style={styles.backButton} onPress={() => setCurrentPage('home')}>
+          <Text style={styles.backButtonText}>رجوع</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
 
-To create a new Expo project, run the following in your terminal:
+  return (
+    <View style={styles.app}>
+      {currentPage === 'home' ? <HomePage /> : <BookingPage />}
+    </View>
+  );
+};
 
-```shell
-npx create-expo-app@latest
-```
+const styles = StyleSheet.create({
+  app: { flex: 1, backgroundColor: '#f5f5f5' },
+  container: { flex: 1, padding: 20, paddingTop: 50 },
+  header: { fontSize: 28, color: '#FFD700', textAlign: 'center', marginBottom: 40, fontWeight: 'bold' },
+  subHeader: { fontSize: 24, color: '#333', textAlign: 'center', marginBottom: 30, fontWeight: 'bold' },
+  input: { backgroundColor: 'white', padding: 15, marginBottom: 15, borderRadius: 10, borderWidth: 1, borderColor: '#ddd', textAlign: 'right' },
+  textArea: { height: 80 },
+  button: { backgroundColor: '#FFD700', padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 10 },
+  buttonText: { color: '#333', fontSize: 18, fontWeight: 'bold' },
+  backButton: { backgroundColor: '#666', padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 10 },
+  backButtonText: { color: 'white', fontSize: 16 }
+});
 
-Once you’ve created your app, check out the rest of Expo’s getting started guide to start developing your app.
-
-<BoxLink href="https://docs.expo.dev/get-started/set-up-your-environment">Continue with Expo</BoxLink>
+export default App;
